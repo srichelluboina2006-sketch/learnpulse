@@ -1,0 +1,10 @@
+{
+  "name": "learnpulse",
+  "version": "1.0.0",
+  "description": "Full-Stack Interactive Learning & Course Management Hub with MongoDB Atlas",
+  "scripts": {
+    "build": "npm --prefix client install && npm --prefix client run build && npm --prefix server install",
+    "start": "node server/server.js",
+    "seed": "node server/scripts/seed.js"
+  }
+}
