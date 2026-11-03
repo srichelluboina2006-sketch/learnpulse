@@ -81,12 +81,15 @@ if (fs.existsSync(clientDistPath)) {
 // Centralized Error Handler
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+module.exports = app;
 
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`🚀 LearnPulse Backend Server Running on Port: ${PORT}`);
-  console.log(`🔗 Health Check: http://localhost:${PORT}/api/health`);
-  console.log(`📡 Database: Configured for MongoDB Atlas & Local`);
-  console.log(`====================================================`);
-});
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(`🚀 LearnPulse Backend Server Running on Port: ${PORT}`);
+    console.log(`🔗 Health Check: http://localhost:${PORT}/api/health`);
+    console.log(`📡 Database: Configured for MongoDB Atlas & Local`);
+    console.log(`====================================================`);
+  });
+}

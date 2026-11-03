@@ -12,3 +12,4 @@ services:
         value: super_secret_learnpulse_jwt_key_2026
       - key: NODE_ENV
         value: production
+

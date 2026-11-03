@@ -6,7 +6,13 @@ try {
 }
 const mongoose = require('mongoose');
 
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected || mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+
   try {
     const connUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/learnpulseDB';
     const isAtlas = connUri.includes('mongodb.net') || connUri.startsWith('mongodb+srv://');
@@ -18,6 +24,7 @@ const connectDB = async () => {
       autoIndex: true
     });
 
+    isConnected = true;
     console.log(`[Database] MongoDB Connected Successfully: ${conn.connection.host}`);
     return conn;
   } catch (error) {
