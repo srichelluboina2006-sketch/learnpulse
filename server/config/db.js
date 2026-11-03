@@ -6,39 +6,45 @@ try {
 }
 const mongoose = require('mongoose');
 
-let isConnected = false;
+// Verified MongoDB Atlas Cloud Cluster Connection String
+const ATLAS_FALLBACK_URI = 'mongodb://srichelluboina2006_db_user:Anjali@ac-hoengxi-shard-00-00.ry0itrr.mongodb.net:27017,ac-hoengxi-shard-00-01.ry0itrr.mongodb.net:27017,ac-hoengxi-shard-00-02.ry0itrr.mongodb.net:27017/learnpulseDB?ssl=true&replicaSet=atlas-g7p7n3-shard-0&authSource=admin&retryWrites=true&w=majority';
+
+let cachedPromise = null;
 
 const connectDB = async () => {
-  if (isConnected || mongoose.connection.readyState === 1) {
+  // Return existing active connection
+  if (mongoose.connection.readyState === 1) {
     return mongoose.connection;
   }
 
-  try {
-    const connUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/learnpulseDB';
-    const isAtlas = connUri.includes('mongodb.net') || connUri.startsWith('mongodb+srv://');
+  // Return connection promise if in-flight
+  if (cachedPromise) {
+    return cachedPromise;
+  }
 
-    console.log(`[Database] Connecting to ${isAtlas ? 'MongoDB Atlas Cloud' : 'Local MongoDB'}...`);
+  const connUri = process.env.MONGO_URI || ATLAS_FALLBACK_URI;
+  const isAtlas = connUri.includes('mongodb.net') || connUri.startsWith('mongodb+srv://');
 
-    const conn = await mongoose.connect(connUri, {
-      serverSelectionTimeoutMS: 8000,
-      autoIndex: true
-    });
+  console.log(`[Database] Connecting to ${isAtlas ? 'MongoDB Atlas Cloud' : 'Local MongoDB'}...`);
 
-    isConnected = true;
+  cachedPromise = mongoose.connect(connUri, {
+    serverSelectionTimeoutMS: 10000,
+    autoIndex: true
+  }).then((conn) => {
     console.log(`[Database] MongoDB Connected Successfully: ${conn.connection.host}`);
     return conn;
-  } catch (error) {
-    console.error(`[Database Error] Connection failed: ${error.message}`);
-    if (error.message.includes('bad auth') || error.message.includes('Authentication failed')) {
+  }).catch((err) => {
+    cachedPromise = null;
+    console.error(`[Database Error] Connection failed: ${err.message}`);
+    if (err.message.includes('bad auth') || err.message.includes('Authentication failed')) {
       console.error('>> TIP: Please check your MongoDB Atlas username and password in .env');
-    } else if (error.message.includes('querySrv ENOTFOUND') || error.message.includes('buffering timed out')) {
+    } else if (err.message.includes('querySrv ENOTFOUND') || err.message.includes('buffering timed out')) {
       console.error('>> TIP: Make sure your IP address is whitelisted in MongoDB Atlas (Network Access -> Allow Access from Anywhere 0.0.0.0/0)');
     }
-    // In dev or local, don't crash immediately so server can still serve health check
-    if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
-    }
-  }
+    throw err;
+  });
+
+  return cachedPromise;
 };
 
 module.exports = connectDB;
