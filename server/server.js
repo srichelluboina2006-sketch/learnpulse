@@ -59,10 +59,24 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-// Root route
-app.get('/', (req, res) => {
-  res.send('<h3>LearnPulse API is running smoothly. Access endpoints via /api/...</h3>');
-});
+// Serve Frontend SPA in Production / Single-Service Deployment
+const path = require('path');
+const fs = require('fs');
+
+const clientDistPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('<h3>LearnPulse API is running smoothly. Access endpoints via /api/...</h3>');
+  });
+}
 
 // Centralized Error Handler
 app.use(errorHandler);
